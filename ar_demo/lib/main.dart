@@ -358,9 +358,8 @@ class _PropertyARViewState extends State<PropertyARView> {
                         onARKitViewCreated: onARKitViewCreated,
                         debug: true,
                         enableTapRecognizer: true,
-                        showWorldOrigin: true,
                         showStatistics: true,
-                        enablePinchRecognizer: true,
+                        worldAlignment: ARWorldAlignment.camera,
                       ),
                 Align(
                   alignment: Alignment.bottomRight,
