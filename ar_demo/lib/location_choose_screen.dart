@@ -50,6 +50,10 @@ class _ChooseLocationScreenState extends State<ChooseLocationScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          if (properties.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select at least one location')));
+            return;
+          }
           Navigator.push(context, MaterialPageRoute(builder: (context) => PropertyARView(properties: properties)));
         },
         child: const Icon(Icons.check),
