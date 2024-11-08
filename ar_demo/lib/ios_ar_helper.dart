@@ -16,11 +16,11 @@ class IOSARHelper {
     required String base64Image,
     String? nodeName,
   }) async {
-    arKitController.add(ARKitNode(
-      name: 'sphere',
-      geometry: ARKitSphere(radius: 0.1),
-      position: Vector3(0, 0, -1),
-    ));
+    // arKitController.add(ARKitNode(
+    //   name: 'sphere',
+    //   geometry: ARKitSphere(radius: 0.1),
+    //   position: Vector3(0, 0, -1),
+    // ));
 
     // Calculate distance and bearing between points
     final distance = calculateDistance(

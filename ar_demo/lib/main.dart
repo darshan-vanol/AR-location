@@ -448,18 +448,56 @@ class _PropertyARViewState extends State<PropertyARView> {
 
       final image = await _captureWidgetToImageBase64(property.key);
 
-      await IOSARHelper.placeObjectInAR(
-        arKitController: arKitController,
+      // await IOSARHelper.placeObjectInAR(
+      //   arKitController: arKitController,
+      //   targetLat: property.latitude,
+      //   targetLon: property.longitude,
+      //   targetAlt: property.altitude,
+      //   currentLat: currentPosition!.latitude,
+      //   currentLon: currentPosition!.longitude,
+      //   currentAlt: currentPosition!.altitude,
+      //   bearing: currentBearing!,
+      //   base64Image: image,
+      //   nodeName: property.name,
+      // );
+
+      final position = ARGPSConverter.gpsToLocalSpace(
+        userAlt: locationdata!.altitude!,
+        deviceBearing: currentBearing!,
+        userLat: locationdata!.latitude!,
+        userLon: locationdata!.longitude!,
+        targetAlt: property.altitude,
         targetLat: property.latitude,
         targetLon: property.longitude,
-        targetAlt: property.altitude,
-        currentLat: currentPosition!.latitude,
-        currentLon: currentPosition!.longitude,
-        currentAlt: currentPosition!.altitude,
-        bearing: currentBearing!,
-        base64Image: image,
-        nodeName: property.name,
       );
+      final lookAtMatrix = lookAt(
+        position,
+        vector.Vector3(0, 0, 0),
+        vector.Vector3(0, 1, 0),
+      );
+
+      final material = ARKitMaterial(
+        doubleSided: true,
+        lightingModelName: ARKitLightingModel.constant,
+        diffuse: ARKitMaterialProperty.image(image),
+      );
+      final plane = ARKitPlane(
+        width: 2, // Adjust size as needed
+        height: 1,
+        materials: [material],
+      );
+      final node = ARKitNode(
+          name: property.name,
+          geometry: plane,
+          position: position,
+          rotation: quaternionFromMatrix(lookAtMatrix),
+          scale: vector.Vector3(
+            3.5,
+            3.5,
+            3.5,
+          ));
+
+      arKitController.add(node);
     }
 
     arKitController.onNodeTap = (names) => onNodeTap(names.first);
