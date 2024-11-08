@@ -442,9 +442,9 @@ class _PropertyARViewState extends State<PropertyARView> {
   void onARKitViewCreated(ARKitController arKitController) async {
 //sleep for 500ms to wait for ARCore to initialize
     await Future.delayed(const Duration(milliseconds: 500));
-
+    locationdata = await location.getLocation();
     for (final property in properties) {
-      if (currentPosition == null || currentBearing == null) continue;
+      if (currentBearing == null) continue;
 
       final image = await _captureWidgetToImageBase64(property.key);
 
@@ -497,7 +497,7 @@ class _PropertyARViewState extends State<PropertyARView> {
             3.5,
           ));
 
-      arKitController.add(node);
+      await arKitController.add(node);
     }
 
     arKitController.onNodeTap = (names) => onNodeTap(names.first);
