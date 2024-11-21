@@ -8,16 +8,20 @@ import 'dart:ui';
 import 'dart:math';
 
 import 'package:ar_demo/direction_indicator.dart';
-import 'package:ar_demo/ios_ar_helper.dart';
+
 import 'package:ar_demo/location_choose_screen.dart';
+import 'package:ar_location_view/ar_annotation.dart';
+import 'package:ar_location_view/ar_location_widget.dart';
 import 'package:arkit_plugin/arkit_plugin.dart';
 import 'package:flutter/material.dart';
 import 'package:arcore_flutter_plugin/arcore_flutter_plugin.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
+
 import 'package:vector_math/vector_math_64.dart' as vector;
 
 void main() {
@@ -46,79 +50,6 @@ class Property {
     required this.key,
   });
 }
-
-// final List<Property> properties = [
-//   // Property(
-//   //   name: 'McDonalds',
-//   //   price: 'McDonalds',
-//   //   bedCount: '3',
-//   //   bathCount: '2',
-//   //   latitude: 23.192479005088746,
-//   //   longitude: 72.6164854830734,
-//   //   altitude: 47.0,
-//   //   key: GlobalKey(),
-//   // ),
-//   Property(
-//     name: 'Point A', // padhar deri
-//     price: 'Point A',
-//     bedCount: '3',
-//     bathCount: '2',
-//     latitude: 23.292862804904445,
-//     longitude: 71.8129295837378,
-//     altitude: -13.0,
-//     key: GlobalKey(),
-//   ),
-//   // Property(
-//   //   name: 'Nayara Petrol pump',
-//   //   price: 'Nayara Petrol pump',
-//   //   bedCount: '4',
-//   //   bathCount: '3',
-//   //   latitude: 23.192041849966913,
-//   //   longitude: 72.61233988105963,
-//   //   altitude: 47.0,
-//   //   key: GlobalKey(),
-//   // ),
-//   Property(
-//     name: 'Point B', // Delo 2
-//     price: 'Point B',
-//     bedCount: '4',
-//     bathCount: '3',
-//     latitude: 23.29326034342297,
-//     longitude: 71.81278513099004,
-//     altitude: -13.0,
-//     key: GlobalKey(),
-//   ),
-//   // Property(
-//   //   name: 'Khetlapa',
-//   //   price: 'Khetlapa',
-//   //   bedCount: '5',
-//   //   bathCount: '4',
-//   //   latitude: 23.193304928478646,
-//   //   longitude: 72.61495523568317,
-//   //   altitude: 46.0,
-//   //   key: GlobalKey(),
-//   // ),
-//   Property(
-//     name: 'Point C', // Bhagaba dukan
-//     price: 'Point C',
-//     bedCount: '5',
-//     bathCount: '4',
-//     latitude: 23.29293024005034,
-//     longitude: 71.81272466851638,
-//     altitude: -13.0,
-//     key: GlobalKey(),
-//   ),
-//   Property(
-//     name: 'Ratnaraj  I-502',
-//     price: 'Ratnaraj  I-502',
-//     bedCount: '5',
-//     bathCount: '4',
-//     latitude: 23.19285755324716,
-//     longitude: 72.61311728884499,
-//     altitude: -13.0,
-//     key: GlobalKey(),
-//   ),
-// ];
 
 // Earth radius constant (in meters)
 const double earthRadius = 6378137.0;
@@ -160,6 +91,7 @@ class _PropertyARViewState extends State<PropertyARView> {
   GoogleMapController? googleMapController;
   List<Property> properties = [];
   StreamSubscription<double>? compassStream;
+  List<Annotation> annotations = [];
 
   @override
   void initState() {
@@ -172,6 +104,42 @@ class _PropertyARViewState extends State<PropertyARView> {
   requestPermission() async {
     isPermissionGranted = await locationService.requestPermission();
     setState(() {});
+
+    currentPosition = await Geolocator.getCurrentPosition();
+
+    if (currentPosition != null) {
+      //create fake position near to current positio
+
+      List<(String, Position)> propertyPositions = widget.properties.map((e) {
+        final geoPoint = CoordinateAdjuster.adjustPropertyCoordinates(
+            GeoPoint(currentPosition!.latitude, currentPosition!.longitude), GeoPoint(e.latitude, e.longitude));
+
+        return (
+          e.name,
+          Position(
+            latitude: geoPoint.latitude,
+            longitude: geoPoint.longitude,
+            altitude: currentPosition!.altitude,
+            timestamp: currentPosition!.timestamp,
+            accuracy: currentPosition!.accuracy,
+            altitudeAccuracy: currentPosition!.altitudeAccuracy,
+            heading: currentPosition!.heading,
+            headingAccuracy: currentPosition!.headingAccuracy,
+            speed: currentPosition!.speed,
+            speedAccuracy: currentPosition!.speedAccuracy,
+          )
+        );
+      }).toList();
+
+      annotations = propertyPositions.map((e) {
+        return Annotation(
+          uid: e.$1,
+          position: e.$2,
+        );
+      }).toList();
+
+      setState(() {});
+    }
   }
 
   void initializeLocation() {
@@ -344,23 +312,65 @@ class _PropertyARViewState extends State<PropertyARView> {
       body: isPermissionGranted
           ? Stack(
               children: [
-                ...properties.map((property) => _buildPropertyCard(property)),
-                Platform.isAndroid
-                    ? ArCoreView(
-                        onArCoreViewCreated: _onArCoreViewCreated,
-                        // enableUpdateListener: true,
-                        enableTapRecognizer: true,
-                        // enablePlaneRenderer: true,
-                        // debug: true,
-                        type: ArCoreViewType.STANDARDVIEW,
-                      )
-                    : ARKitSceneView(
-                        onARKitViewCreated: onARKitViewCreated,
-                        debug: true,
-                        enableTapRecognizer: true,
-                        showStatistics: true,
-                        worldAlignment: ARWorldAlignment.camera,
+                // Platform.isAndroid
+                // ? ArCoreView(
+                //     onArCoreViewCreated: _onArCoreViewCreated,
+                //     // enableUpdateListener: true,
+                //     enableTapRecognizer: true,
+                //     // enablePlaneRenderer: true,
+                //     // debug: true,
+                //     type: ArCoreViewType.STANDARDVIEW,
+                //   )
+
+                // ?
+                ArLocationWidget(
+                  annotations: annotations,
+                  annotationHeight: 120,
+                  annotationViewBuilder: (context, annotation) {
+                    return InkWell(
+                      onTap: () => onNodeTap(annotation.uid),
+                      child: Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.location_on, color: Colors.red),
+                                SizedBox(width: 4),
+                                Text(annotation.uid, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
+                            const SizedBox(height: 5),
+                            Text(annotation.distanceFromUser.toStringAsFixed(2) + ' meters'),
+                            const SizedBox(height: 5),
+                            Text('Price: \$100,000'),
+                            const SizedBox(height: 5),
+                          ],
+                        ),
                       ),
+                    );
+                  },
+                  scaleWithDistance: true,
+                  maxVisibleDistance: 100,
+                  onLocationChange: (position) {
+                    print("Location changed: ${position.latitude}, ${position.longitude}");
+                  },
+                )
+
+                // ? ARview
+                // : ARKitSceneView(
+                //     onARKitViewCreated: onARKitViewCreated,
+                //     // debug: true,
+                //     enableTapRecognizer: true,
+                //     showStatistics: true,
+                //     // worldAlignment: ARWorldAlignment.camera,
+                //   ),
+                ,
                 Align(
                   alignment: Alignment.bottomRight,
                   child: SizedBox(
@@ -441,21 +451,19 @@ class _PropertyARViewState extends State<PropertyARView> {
 
   void onARKitViewCreated(ARKitController arKitController) async {
 //sleep for 500ms to wait for ARCore to initialize
-    await Future.delayed(const Duration(milliseconds: 500));
+    // await Future.delayed(const Duration(milliseconds: 500));
     locationdata = await location.getLocation();
     for (final property in properties) {
       if (currentBearing == null) continue;
-
-      final image = await _captureWidgetToImageBase64(property.key);
 
       // await IOSARHelper.placeObjectInAR(
       //   arKitController: arKitController,
       //   targetLat: property.latitude,
       //   targetLon: property.longitude,
       //   targetAlt: property.altitude,
-      //   currentLat: currentPosition!.latitude,
-      //   currentLon: currentPosition!.longitude,
-      //   currentAlt: currentPosition!.altitude,
+      //   currentLat: locationdata!.latitude!,
+      //   currentLon: locationdata!.longitude!,
+      //   currentAlt: locationdata!.altitude!,
       //   bearing: currentBearing!,
       //   base64Image: image,
       //   nodeName: property.name,
@@ -478,26 +486,38 @@ class _PropertyARViewState extends State<PropertyARView> {
 
       final material = ARKitMaterial(
         doubleSided: true,
-        lightingModelName: ARKitLightingModel.constant,
-        diffuse: ARKitMaterialProperty.image(image),
+        diffuse: ARKitMaterialProperty.image('/assets/pin.png'),
       );
       final plane = ARKitPlane(
-        width: 2, // Adjust size as needed
-        height: 1,
         materials: [material],
       );
+
+      final rotation = quaternionFromMatrix(lookAtMatrix);
+
+      print("Rotation: $rotation");
+
       final node = ARKitNode(
-          name: property.name,
-          geometry: plane,
-          position: position,
-          rotation: quaternionFromMatrix(lookAtMatrix),
-          scale: vector.Vector3(
-            3.5,
-            3.5,
-            3.5,
-          ));
+        name: property.name,
+        geometry: plane,
+        position: position,
+        rotation: rotation,
+        scale: vector.Vector3(
+          2,
+          2,
+          2,
+        ),
+      );
+
+      // final node = ARKitGltfNode(
+      //   name: property.name,
+      //   assetType: AssetType.flutterAsset,
+      //   url: '/assets/map_pin_location_pin.glb',
+      //   position: position,
+      //   scale: vector.Vector3(2, 2, 2),
+      // );
 
       await arKitController.add(node);
+      print("Added node: ${property.name}");
     }
 
     arKitController.onNodeTap = (names) => onNodeTap(names.first);
@@ -556,17 +576,28 @@ class _PropertyARViewState extends State<PropertyARView> {
     //   },
     // );
 
+    controller.onNodeTap = onNodeTap;
     locationdata = await location.getLocation();
 
     for (final property in properties) {
-      _addPropertyCard(controller, property);
+      await _addPropertyCard(arCoreController!, property);
     }
 
-    controller.onNodeTap = onNodeTap;
-    controller.resume();
+    // controller.resume();
   }
 
   void onNodeTap(String name) {
+    print("Tapped on $name");
+
+    final property = properties.firstWhere((element) => element.name == name);
+
+    // final distance = locationService.calculateDistance(
+    //   locationdata!.latitude!,
+    //   locationdata!.longitude!,
+    //   property.latitude,
+    //   property.longitude,
+    // );
+
     showModalBottomSheet(
       context: context,
       builder: (context) => Container(
@@ -574,7 +605,19 @@ class _PropertyARViewState extends State<PropertyARView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(name),
+            Text(
+              name,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 10),
+            // Text('Distance: ${distance.toStringAsFixed(2)} meters'),
+            const SizedBox(height: 10),
+            Text('Price: ${property.price}'),
+            const SizedBox(height: 10),
+            Text('Latitude: ${property.latitude}, Longitude: ${property.longitude}'),
             const SizedBox(height: 10),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -597,7 +640,8 @@ class _PropertyARViewState extends State<PropertyARView> {
   ) async {
     if (currentBearing == null) return;
 
-    final propertyCardImage = await _captureWidgetToImage(property.key);
+    // final propertyCardImage = await _captureWidgetToImage(property.key);
+    final bytes = (await rootBundle.load('assets/pin.png')).buffer.asUint8List();
 
     final position = ARGPSConverter.gpsToLocalSpace(
       userAlt: locationdata!.altitude!,
@@ -627,13 +671,13 @@ class _PropertyARViewState extends State<PropertyARView> {
     final propertyNode = ArCoreNode(
       name: property.name,
       image: ArCoreImage(
-        bytes: propertyCardImage,
+        bytes: bytes,
         height: 300,
-        width: 500,
+        width: 300,
       ),
       position: position,
-      scale: vector.Vector3(2.0, 2.0, 2.0),
-      rotation: quaternionFromMatrix(lookAtMatrix),
+      scale: vector.Vector3(4.0, 4.0, 4.0),
+      // rotation: quaternionFromMatrix(lookAtMatrix),
     );
 
     controller.addArCoreNode(propertyNode);
@@ -693,6 +737,48 @@ class _PropertyARViewState extends State<PropertyARView> {
     return 'data:image/png;base64,$base64String'; // Added data URI prefix
   }
 
+/*   void fetchAndCalculateDeclination() async {
+    // Step 1: Get the current location
+    locationdata = await location.getLocation();
+    if (locationdata == null) {
+      print("Unable to retrieve location.");
+      return;
+    }
+
+    double latitude = locationdata!.latitude!;
+    double longitude = locationdata!.longitude!;
+    double altitude = locationdata!.altitude ?? 0.0; // Use 0 if altitude is not available
+
+    // Step 2: Fetch the magnetic declination
+    double? declination = await getMagneticDeclination(latitude, longitude, altitude);
+
+    if (declination != null) {
+      print("Magnetic Declination: $declination°");
+    } else {
+      print("Could not retrieve magnetic declination.");
+    }
+  }
+
+  Future<double?> getMagneticDeclination(double latitude, double longitude, double altitude) async {
+    final DateTime now = DateTime.now();
+    final String url = 'https://www.ngdc.noaa.gov/geomag-web/calculators/calculateDeclination';
+
+    try {
+      final response =
+          await http.get(Uri.parse('$url?lat1=$latitude&lon1=$longitude&resultFormat=json&model=WMM&altitude=$altitude&year=${now.year}&key=zNEw7'));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['result'][0]['declination']; // This gives magnetic declination in degrees
+      } else {
+        print('Failed to fetch declination data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error occurred while fetching declination: $e');
+    }
+    return null;
+  }
+ */
   @override
   void dispose() {
     arCoreController?.dispose();
@@ -749,7 +835,11 @@ vector.Vector4 quaternionFromMatrix(vector.Matrix4 matrix) {
 Stream<double> getCurrentBearing() async* {
   Stream<CompassEvent>? compass = FlutterCompass.events;
   if (compass != null) {
-    yield* compass.map((event) => event.heading ?? 0.0);
+    yield* compass.map((event) => event.heading != null
+        ? Platform.isIOS
+            ? (event.heading! + 30) % 360
+            : event.heading!
+        : 0.0);
   }
 }
 
@@ -818,7 +908,7 @@ class LocationService {
   }
 
   bool _shouldUpdatePosition(LocationData currentLocation) {
-    double distance = _calculateDistance(
+    double distance = calculateDistance(
       _lastPosition.latitude!,
       _lastPosition.longitude!,
       currentLocation.latitude!,
@@ -827,7 +917,7 @@ class LocationService {
     return distance >= threshold;
   }
 
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+  double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
     const double earthRadius = 6371000; // in meters
     final double dLat = _degreesToRadians(lat2 - lat1);
     final double dLon = _degreesToRadians(lon2 - lon1);
@@ -907,4 +997,84 @@ AR Position: X: ${localX.toStringAsFixed(2)}, Y: ${localY.toStringAsFixed(2)}, Z
 
   /// Helper method to convert radians to degrees
   static double degrees(double radians) => radians * 180.0 / pi;
+}
+
+class Annotation extends ArAnnotation {
+  Annotation({
+    required super.uid,
+    required super.position,
+  });
+}
+
+class GeoPoint {
+  final double latitude;
+  final double longitude;
+
+  GeoPoint(this.latitude, this.longitude);
+}
+
+class CoordinateAdjuster {
+  static const double _earthRadiusKm = 6371.0;
+
+  /// Adjusts property coordinates by rotating them 30 degrees left from user's perspective
+  /// [userLocation] - Current user's location (latitude, longitude)
+  /// [propertyLocation] - Original property location (latitude, longitude)
+  /// Returns adjusted property coordinates
+  static GeoPoint adjustPropertyCoordinates(
+    GeoPoint userLocation,
+    GeoPoint propertyLocation,
+  ) {
+    // Convert degrees to radians
+    final userLat = _toRadians(userLocation.latitude);
+    final userLon = _toRadians(userLocation.longitude);
+    final propertyLat = _toRadians(propertyLocation.latitude);
+    final propertyLon = _toRadians(propertyLocation.longitude);
+
+    // Calculate initial bearing
+    final dLon = propertyLon - userLon;
+    final y = sin(dLon) * cos(propertyLat);
+    final x = cos(userLat) * sin(propertyLat) - sin(userLat) * cos(propertyLat) * cos(dLon);
+    var bearing = atan2(y, x);
+
+    // Adjust bearing by 30 degrees to the left
+    bearing = bearing - _toRadians(29);
+
+    // Calculate distance between points
+    final distance = _calculateDistance(userLocation, propertyLocation);
+
+    // Calculate new coordinates
+    final newLat = asin(
+      sin(userLat) * cos(distance / _earthRadiusKm) + cos(userLat) * sin(distance / _earthRadiusKm) * cos(bearing),
+    );
+
+    final newLon = userLon +
+        atan2(
+          sin(bearing) * sin(distance / _earthRadiusKm) * cos(userLat),
+          cos(distance / _earthRadiusKm) - sin(userLat) * sin(newLat),
+        );
+
+    return GeoPoint(
+      _toDegrees(newLat),
+      _toDegrees(newLon),
+    );
+  }
+
+  /// Calculates the distance between two points in kilometers
+  static double _calculateDistance(GeoPoint point1, GeoPoint point2) {
+    final lat1 = _toRadians(point1.latitude);
+    final lon1 = _toRadians(point1.longitude);
+    final lat2 = _toRadians(point2.latitude);
+    final lon2 = _toRadians(point2.longitude);
+
+    final dLat = lat2 - lat1;
+    final dLon = lon2 - lon1;
+
+    final a = sin(dLat / 2) * sin(dLat / 2) + cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return _earthRadiusKm * c;
+  }
+
+  static double _toRadians(double degrees) => degrees * pi / 180;
+  static double _toDegrees(double radians) => radians * 180 / pi;
 }

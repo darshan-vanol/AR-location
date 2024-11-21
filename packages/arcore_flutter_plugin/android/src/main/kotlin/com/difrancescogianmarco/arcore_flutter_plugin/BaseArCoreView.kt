@@ -84,8 +84,8 @@ open class BaseArCoreView(val activity: Activity, context: Context, messenger: B
                 .registerActivityLifecycleCallbacks(this.activityLifecycleCallbacks)
     }
 
-    override fun getView(): View {
-        return arSceneView as View
+    override fun getView(): View? {
+        return arSceneView as? View
     }
 
     override fun dispose() {

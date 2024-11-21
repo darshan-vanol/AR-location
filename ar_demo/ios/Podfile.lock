@@ -1,7 +1,11 @@
 PODS:
+  - ar_location_view (0.0.1):
+    - Flutter
   - arkit_plugin (0.0.1):
     - Flutter
     - GLTFSceneKit
+  - camera_avfoundation (0.0.1):
+    - Flutter
   - Flutter (1.0.0)
   - flutter_compass (0.0.1):
     - Flutter
@@ -21,16 +25,24 @@ PODS:
     - GoogleMaps/Base
   - location (0.0.1):
     - Flutter
+  - native_device_orientation (0.0.1):
+    - Flutter
+  - permission_handler_apple (9.3.0):
+    - Flutter
   - sensors_plus (0.0.1):
     - Flutter
 
 DEPENDENCIES:
+  - ar_location_view (from `.symlinks/plugins/ar_location_view/ios`)
   - arkit_plugin (from `.symlinks/plugins/arkit_plugin/ios`)
+  - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - Flutter (from `Flutter`)
   - flutter_compass (from `.symlinks/plugins/flutter_compass/ios`)
   - geolocator_apple (from `.symlinks/plugins/geolocator_apple/ios`)
   - google_maps_flutter_ios (from `.symlinks/plugins/google_maps_flutter_ios/ios`)
   - location (from `.symlinks/plugins/location/ios`)
+  - native_device_orientation (from `.symlinks/plugins/native_device_orientation/ios`)
+  - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - sensors_plus (from `.symlinks/plugins/sensors_plus/ios`)
 
 SPEC REPOS:
@@ -40,8 +52,12 @@ SPEC REPOS:
     - GoogleMaps
 
 EXTERNAL SOURCES:
+  ar_location_view:
+    :path: ".symlinks/plugins/ar_location_view/ios"
   arkit_plugin:
     :path: ".symlinks/plugins/arkit_plugin/ios"
+  camera_avfoundation:
+    :path: ".symlinks/plugins/camera_avfoundation/ios"
   Flutter:
     :path: Flutter
   flutter_compass:
@@ -52,11 +68,17 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/google_maps_flutter_ios/ios"
   location:
     :path: ".symlinks/plugins/location/ios"
+  native_device_orientation:
+    :path: ".symlinks/plugins/native_device_orientation/ios"
+  permission_handler_apple:
+    :path: ".symlinks/plugins/permission_handler_apple/ios"
   sensors_plus:
     :path: ".symlinks/plugins/sensors_plus/ios"
 
 SPEC CHECKSUMS:
+  ar_location_view: 135d2ac125894b8d2567c3574600912021b2a214
   arkit_plugin: c08c4e6f334a922154c2caf2f6fadfaefb51c181
+  camera_avfoundation: dd002b0330f4981e1bbcb46ae9b62829237459a4
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   flutter_compass: cbbd285cea1584c7ac9c4e0c3e1f17cbea55e855
   geolocator_apple: 6cbaf322953988e009e5ecb481f07efece75c450
@@ -65,8 +87,10 @@ SPEC CHECKSUMS:
   google_maps_flutter_ios: e31555a04d1986ab130f2b9f24b6cdc861acc6d3
   GoogleMaps: 8939898920281c649150e0af74aa291c60f2e77d
   location: d5cf8598915965547c3f36761ae9cc4f4e87d22e
+  native_device_orientation: 348b10c346a60ebbc62fb235a4fdb5d1b61a8f55
+  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
   sensors_plus: 7229095999f30740798f0eeef5cd120357a8f4f2
 
-PODFILE CHECKSUM: 1959d098c91d8a792531a723c4a9d7e9f6a01e38
+PODFILE CHECKSUM: d94c09af81448906c8f81cb462782eb954f0be62
 
 COCOAPODS: 1.15.2
